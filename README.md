@@ -1,9 +1,10 @@
 # open-extensions
 
-Independent release repository for OpenCode extensions. Each directory is a
-self-contained extension (including a committed, prebuilt `dist/` because
-`@opencode-ai/extension-kit` is not publicly published, so extensions cannot
-be rebuilt outside the monorepo).
+Distribution-only release repository for OpenCode extensions. Each
+`<extension>/` directory contains only its release metadata: `stable.json`
+(the signed release descriptor), `stable.json.sig` when published, and a
+README. Extension source lives in the opencode monorepo; the descriptor's
+`source.commit` records the exact commit a release was built from.
 
 Install `.tgz` archives are distributed through
 [GitHub Releases](https://github.com/panyw5/open-extensions/releases). Each

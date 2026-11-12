@@ -2,3 +2,4 @@ node_modules/
 artifacts/
 *.tgz
 .DS_Store
+.turbo/
