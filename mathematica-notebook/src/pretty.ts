@@ -10,7 +10,7 @@ export type Pretty =
   | { kind: "sup"; base: Pretty[]; exp: Pretty[] }
   | { kind: "sub"; base: Pretty[]; sub: Pretty[] }
   | { kind: "sqrt"; arg: Pretty[] }
-  | { kind: "group"; inner: Pretty[] }
+  | { kind: "group"; open: string; inner: Pretty[]; close: string; tall: boolean }
 
 type Tok = { kind: string; text: string }
 
@@ -56,6 +56,7 @@ const MERGE = new Set([
   "??",
   "::",
   "[[",
+  "]]",
   "\u003c|",
   "|>",
   "!!",
@@ -103,7 +104,44 @@ const trim = (items: Pretty[]) => {
   return items.slice(a, b)
 }
 
-type PGroup = { kind: "group"; inner: Pretty[]; args: Pretty[][] }
+// A fraction bar groups its operands on its own, so a sole (...) around
+// the whole numerator or denominator is dropped from the display, like
+// Mathematica's typeset input.
+const unparen = (items: Pretty[]) => {
+  const t = trim(items)
+  return t.length === 1 && t[0].kind === "group" && t[0].open === "(" && t[0].close === ")"
+    ? t[0].inner
+    : t
+}
+
+type PGroup = {
+  kind: "group"
+  open: string
+  inner: Pretty[]
+  close: string
+  tall: boolean
+  args: Pretty[][]
+}
+
+// Whether a group's contents stand taller than one line of source: any
+// fraction, or a taller construct (radical, script) carrying one. Drives the
+// drawn-stroke delimiters in the view.
+const tall = (n: Pretty): boolean => {
+  switch (n.kind) {
+    case "frac":
+      return true
+    case "sqrt":
+      return n.arg.some(tall)
+    case "sup":
+      return n.base.some(tall) || n.exp.some(tall)
+    case "sub":
+      return n.base.some(tall) || n.sub.some(tall)
+    case "group":
+      return n.tall
+    default:
+      return false
+  }
+}
 
 class Parser {
   i = 0
@@ -125,13 +163,29 @@ class Parser {
   // Bracketed group with comma-separated arguments.
   group(): PGroup {
     const open = this.next()!
-    const close = CLOSERS[open.text]
-    const inner: Pretty[] = [this.tok(open)]
+    const closer = CLOSERS[open.text]
+    const inner: Pretty[] = []
     const args: Pretty[][] = []
-    const stop = new Set([",", close])
+    // mergeOps folds adjacent ] into ]], which still must close a single-[.
+    // Stopping on it here lets takeClose split off the leftover ] for an
+    // enclosing bracket (GetAlgebra[a[b]] keeps both ends).
+    const stop = new Set([",", closer, "]]"])
+    const atClose = (t: Tok) => t.text === closer || (closer === "]" && t.text === "]]")
+    let close = ""
+    const takeClose = () => {
+      const t = this.next()!
+      if (t.text === "]]") {
+        close = "]"
+        this.toks.splice(this.i, 0, { kind: "punctuation", text: "]" })
+      } else close = t.text
+    }
     while (this.peek()) {
       const t = this.peek()!
-      if (t.text === close || t.text === ",") break
+      if (t.text === ",") break
+      if (atClose(t)) {
+        takeClose()
+        break
+      }
       const arg = this.seq(stop)
       args.push(arg)
       inner.push(...arg)
@@ -142,13 +196,10 @@ class Parser {
         this.next()
         continue
       }
-      if (n.text === close) {
-        inner.push(this.tok(n))
-        this.next()
-      }
+      if (atClose(n)) takeClose()
       break
     }
-    return { kind: "group", inner, args }
+    return { kind: "group", open: open.text, inner, close, tall: inner.some(tall), args }
   }
 
   // A single primary expression: literal, name, blank, slot or bracketed group.
@@ -242,7 +293,7 @@ class Parser {
           acc = [...acc, this.tok(t)]
           continue
         }
-        acc = [{ kind: "frac", num: trim(acc), den: trim(den) }]
+        acc = [{ kind: "frac", num: unparen(acc), den: unparen(den) }]
         continue
       }
       if (isFiller(t)) {

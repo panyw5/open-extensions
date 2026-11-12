@@ -1,15 +1,11 @@
 var __defProp = Object.defineProperty;
-var __returnValue = (v) => v;
-function __exportSetter(name, newValue) {
-  this[name] = __returnValue.bind(null, newValue);
-}
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, {
       get: all[name],
       enumerable: true,
       configurable: true,
-      set: __exportSetter.bind(all, name)
+      set: (newValue) => all[name] = () => newValue
     });
 };
 
@@ -12345,6 +12341,8 @@ import { resolve as resolve2, extname, dirname } from "node:path";
 import { createHash, randomUUID as randomUUID3 } from "node:crypto";
 
 // src/notebook.ts
+var READONLY_STYLES = new Set(["Output", "Print", "Message", "Echo"]);
+
 class NotebookParseError extends Error {
   offset;
   line;
@@ -12589,13 +12587,12 @@ function parseNotebook(source, options) {
         throw error45;
       rendered = { text: "", safe: false };
     }
-    const runnable = style === "Input" || style === "Code";
     cells.push({
       index: cells.length,
       style,
       text: rendered.text || (rendered.safe ? "" : source.slice(first.start, first.end)),
-      editable: rendered.safe,
-      runnable: runnable && rendered.safe,
+      editable: rendered.safe && !READONLY_STYLES.has(style),
+      runnable: style === "Input" || style === "Code",
       raw: source.slice(entry.start, entry.end),
       start: first.start,
       end: first.end
@@ -12624,13 +12621,16 @@ function editNotebook(source, edits, append, parsed) {
   const seen = new Set;
   const patches = edits.map((edit) => {
     const cell = notebook.cells[edit.index];
-    if (!cell || !cell.editable || seen.has(edit.index) || typeof edit.text !== "string")
+    if (!cell || seen.has(edit.index) || typeof edit.text !== "string")
+      throw new Error("Invalid, duplicate or unsupported cell edit");
+    const input = cell.style === "Input" || cell.style === "Code";
+    if (!cell.editable && !input)
       throw new Error("Invalid, duplicate or unsupported cell edit");
     seen.add(edit.index);
     return {
       start: cell.start,
       end: cell.end,
-      text: cell.style === "Input" || cell.style === "Code" ? `BoxData[${quote(edit.text)}]` : quote(edit.text)
+      text: !cell.editable ? edit.text : input ? `BoxData[${quote(edit.text)}]` : quote(edit.text)
     };
   });
   if (append)
@@ -13811,7 +13811,8 @@ function createNotebookService(host, kernels = new NotebookKernels(host)) {
       if (data.code !== undefined && typeof data.code !== "string")
         throw new Error("code must be a string");
       check2(ctx.signal);
-      const output = await kernels.evaluate(path, typeof data.code === "string" ? data.code : cell.text, ctx.signal);
+      const code = cell.editable ? typeof data.code === "string" ? data.code : cell.text : `ToExpression[${typeof data.code === "string" ? data.code : snapshot.source.slice(cell.start, cell.end)}, StandardForm]`;
+      const output = await kernels.evaluate(path, code, ctx.signal);
       check2(ctx.signal);
       const previous = outputs.get(path);
       const current = previous?.revision === snapshot.revision ? previous.values : {};

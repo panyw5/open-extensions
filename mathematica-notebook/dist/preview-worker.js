@@ -4,6 +4,8 @@ import { readFile, stat } from "node:fs/promises";
 import { createHash } from "node:crypto";
 
 // src/notebook.ts
+var READONLY_STYLES = new Set(["Output", "Print", "Message", "Echo"]);
+
 class NotebookParseError extends Error {
   offset;
   line;
@@ -269,13 +271,12 @@ function parseNotebook(source, options) {
         throw error;
       rendered = { text: "", safe: false };
     }
-    const runnable = style === "Input" || style === "Code";
     cells.push({
       index: cells.length,
       style,
       text: rendered.text || (rendered.safe ? "" : source.slice(first.start, first.end)),
-      editable: rendered.safe,
-      runnable: runnable && rendered.safe,
+      editable: rendered.safe && !READONLY_STYLES.has(style),
+      runnable: style === "Input" || style === "Code",
       raw: source.slice(entry.start, entry.end),
       start: first.start,
       end: first.end

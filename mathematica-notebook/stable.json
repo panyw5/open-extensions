@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "id": "local.mathematica-notebook",
-  "version": "1.18.64",
-  "artifact": {
-    "url": "https://github.com/panyw5/open-extensions/releases/download/mathematica-notebook-v1.18.64/opencode-ai-mathematica-notebook-extension-1.18.64.tgz",
-    "sha256": "12895a8cef29110c556973bab3e228da85236c4a57d0826cad1c9b86c653b1e3"
-  }
-}
