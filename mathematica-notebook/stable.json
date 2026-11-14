@@ -1,9 +1,16 @@
 {
   "schemaVersion": 1,
   "id": "local.mathematica-notebook",
-  "version": "1.18.65",
+  "version": "1.18.66",
+  "engines": {
+    "opencode": ">=1.18.0"
+  },
+  "sequence": 1,
   "artifact": {
-    "url": "https://github.com/panyw5/open-extensions/releases/download/mathematica-notebook-v1.18.65/opencode-ai-mathematica-notebook-extension-1.18.65.tgz",
-    "sha256": "b2b5e993472d0d026a88e85273885412851b39212e766c1a6f81b386abd9da2e"
+    "url": "https://github.com/panyw5/open-extensions/releases/download/mathematica-notebook-v1.18.66/opencode-ai-mathematica-notebook-extension-1.18.66.tgz",
+    "sha256": "0d08a52e8e2568993811481e31cc1cc4abd368d7a351ee3e339910c74cc5e3a2"
+  },
+  "source": {
+    "commit": "e862e16d8402bba9328583341652ad23f179cbb4"
   }
 }
