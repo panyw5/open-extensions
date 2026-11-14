@@ -1,9 +1,16 @@
 {
   "schemaVersion": 1,
   "id": "local.wls-repl",
-  "version": "1.18.64",
+  "version": "1.18.65",
+  "engines": {
+    "opencode": ">=1.18.0"
+  },
+  "sequence": 1,
   "artifact": {
-    "url": "https://github.com/panyw5/open-extensions/releases/download/wls-repl-v1.18.64/opencode-ai-wls-repl-extension-1.18.64.tgz",
-    "sha256": "973691186116df345353cc4fe2894d161cc4578f8d04630ab74fa4f65ad30d17"
+    "url": "https://github.com/panyw5/open-extensions/releases/download/wls-repl-v1.18.65/opencode-ai-wls-repl-extension-1.18.65.tgz",
+    "sha256": "a5a28a207331c26d3de94fb3c671b829e9146314868bcf337d63b4ee46ad1e97"
+  },
+  "source": {
+    "commit": "e862e16d8402bba9328583341652ad23f179cbb4"
   }
 }
